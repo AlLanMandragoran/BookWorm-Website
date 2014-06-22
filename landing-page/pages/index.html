@@ -1,0 +1,118 @@
+<style>
+#display{
+	width:1500px;
+	height:500px;
+	overflow:auto;
+}
+</style>
+
+<html>
+<title>Book Worm</title>
+<div id = "display">
+<p>
+Hello! I am an old book-worm - I have lived for a long time and I have read hundreds of books - and I always wish I could talk to someone about all the books I've read, but people seem too busy reading their books and doing their own thing - and nobody even notices I'm around leave alone wants to talk! So I was wondering if you would talk to me about your favourite books and authors and I'll tell you about mine. Now remember, as you talk to me, that I am a worm - not to mention a very old one - so I might not always understand what you say, but I will do my very best!
+</p>
+</div>
+
+<div id = "input">
+	<form onsubmit=" appendDisplay(); return false; ", id="chatForm">
+		<input id="user" type="text" autocomplete="off"></input>
+	</form>
+</div>
+
+</html>
+
+<script>
+
+var chatRequest = new XMLHttpRequest();
+var sessionID;
+
+var processSystemUtterance = function(responseObject){
+	var response = JSON.parse(responseObject.responseText);
+	console.log(responseObject.responseText);
+	console.log(response);
+	var utterance = response.systemUtterance;
+	sessionID = response.sessionID;
+	var displayDiv = document.getElementById("display");
+	displayDiv.appendChild(createChatItemDiv("BOOK WORM", utterance));
+	stayDown();
+}
+
+var stayDown = function(){
+	var objDiv = document.getElementById("display");
+	objDiv.scrollTop = objDiv.scrollHeight;
+}
+
+chatRequest.onreadystatechange = function(){
+	if(chatRequest.readyState == 4 && chatRequest.status == 200){
+		processSystemUtterance(chatRequest);
+	}
+};
+
+var createChatItemDiv = function(speaker, utterance){
+	var newChatDiv = document.createElement("div");
+	
+	/* Fill in speaker details */
+	
+	var newUtteranceDiv = document.createElement("div");
+	newUtteranceDiv.setAttribute("class", "utterance");
+	
+	var newUtterancePara = document.createElement("p");
+	newUtterancePara.setAttribute("class", "utterance");
+	newUtterancePara.innerHTML = speaker + ": " + utterance;
+
+	newChatDiv.appendChild(newUtteranceDiv);
+	newChatDiv.appendChild(newUtterancePara);
+	
+	return newChatDiv;
+};
+
+var appendDisplay = function(){
+	
+	var utterance = document.getElementById("user").value;
+	var displayDiv = document.getElementById("display");
+	
+	displayDiv.appendChild(createChatItemDiv("YOU", utterance));
+	stayDown();
+	document.getElementById("user").value = "";
+	sendChatRequest(utterance);
+	
+};
+
+var sendChatRequest = function(utterance){
+	
+	var params = {
+			'utterance' : utterance,
+			'sessionID' : sessionID
+	};
+	
+	chatRequest.open("POST", '/chat', true);
+	chatRequest.send(JSON.stringify(params));
+}
+
+var startChatSession = function(){
+	console.log("Starting a chat session");
+	var startRequest = new XMLHttpRequest();
+	
+	startRequest.onreadystatechange = function(){
+		
+		if (startRequest.readyState==4 && startRequest.status==200){
+			processSystemUtterance(startRequest);
+		}
+		
+	};
+	
+	startRequest.open("GET", '/start', true);
+	startRequest.send();
+	
+	
+};
+
+startChatSession();
+
+
+document.getElementById("chatForm").addEventListener('submit', function(evt){
+		evt.preventDefault();
+	}, false);
+
+</script>
